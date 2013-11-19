@@ -1,12 +1,9 @@
-// 2D Test.cpp : Defines the entry point for the console application.
-//
-
 #include "freeglut.h"
-#include "FreeImagePlus.h"
+#include "FreeImage.h"
 
 using namespace std;
 
-GLuint textureId;
+GLuint _textureId;
 
 void handleKeypress(unsigned char key, int x, int y)
 {
@@ -24,7 +21,29 @@ GLuint loadTexture(const char* path)
 	if (!path)
 		return 0;
 
-	FIBITMAP *bitmap = FreeImage_Load(FIF_PNG, "..\res\\", 0);
+	char fullPath[80] = "../res/";
+	strcat_s(fullPath, path);
+
+	FIBITMAP *bitmap = FreeImage_Load(FIF_PNG, fullPath, 0);
+	BYTE* bitmapBytes = FreeImage_GetBits(bitmap);
+
+	GLuint textureId;
+	glGenTextures(1, &textureId);
+	glBindTexture(GL_TEXTURE_2D, textureId);
+	
+	glTexImage2D(GL_TEXTURE_2D,
+				 0,
+				 GL_RGB,
+				 64,
+				 64,
+				 0,
+				 GL_RGB,
+				 GL_BYTE,
+				 bitmapBytes);
+
+	return textureId;
+
+	FreeImage_Unload(bitmap);
 }
 
 void initRendering()
@@ -35,7 +54,7 @@ void initRendering()
 	glEnable(GL_NORMALIZE);
 	glEnable(GL_COLOR_MATERIAL);
 
-	// Load images
+	_textureId = loadTexture("weed.png");
 }
 
 void handleResize(int w, int h)
@@ -55,12 +74,34 @@ void drawScene()
 
 	glTranslatef(0.0f, 0.0f, -5.0f);
 
-	// TODO
+	glEnable(GL_TEXTURE_2D);
+	glBindTexture(GL_TEXTURE_2D, _textureId);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glColor3f(1.0f, 0.2f, 0.2f);
+	glBegin(GL_QUADS);
+
+	glNormal3f(0.0, 0.0f, 1.0f);
+	glTexCoord2f(0.0f, 0.0f);
+	glVertex3f(-0.5f, -0.5f, 0.0f);
+
+	glTexCoord2f(1.0f, 0.0f);
+	glVertex3f(-0.5f, 0.5f, 0.0f);
+
+	glTexCoord2f(1.0f, 1.0f);
+	glVertex3f(0.5f, 0.5f, 0.0f);
+
+	glTexCoord2f(0.0f, 1.0f);
+	glVertex3f(0.5f, -0.5f, 0.0f);
+
+	glEnd();
 
 	glutSwapBuffers();
 }
 
-int _tmain(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
